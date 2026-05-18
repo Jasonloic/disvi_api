@@ -18,28 +18,29 @@ const parser = new RSSParser({
   },
 });
 
-//  Extraction de la vignette 
+const BLOCKED_KEYWORDS = [
+  '1xbet', 'pari sportif', 'paris sportifs', 'bookmaker',
+  'cashback garanti', 'freebet', 'cote sportive', 'mise sportive',
+  'casino', 'jackpot', 'slot', 'machine à sous',
+];
+
+function isBlockedContent(titre, contenu) {
+  const text = `${titre} ${contenu}`.toLowerCase();
+  return BLOCKED_KEYWORDS.some((kw) => text.includes(kw.toLowerCase()));
+}
 
 function extractVignette(item) {
-  // 1. Balises media standard
   if (item.mediaContent?.$.url)   return item.mediaContent.$.url;
   if (item.mediaThumbnail?.$.url) return item.mediaThumbnail.$.url;
   if (item.enclosure?.url)        return item.enclosure.url;
-
-  // 2. Chercher dans le contenu HTML de l'item
   const html = item.content || item['content:encoded'] || item.summary || '';
   if (html) {
     const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
     if (match) return match[1];
   }
-
-  // 3. Chercher dans itunes:image (podcasts)
   if (item.itunes?.image) return item.itunes.image;
-
   return null;
 }
-
-//  Crawl d'une source 
 
 async function crawlSource(source) {
   if (!source.url_source) {
@@ -58,11 +59,20 @@ async function crawlSource(source) {
   }
 
   const items = feed.items ?? [];
-  let inserted = 0, updated = 0, errors = 0;
+  let inserted = 0, updated = 0, errors = 0, blocked = 0;
 
   for (const item of items) {
     const url_origine = item.link || item.guid;
     if (!url_origine) { errors++; continue; }
+
+    const titre   = (item.title || '(sans titre)').slice(0, 1900);
+    const contenu = item.contentSnippet || item.content || item.summary || '';
+
+    if (isBlockedContent(titre, contenu)) {
+      console.log(`[CRAWL] Bloqué — "${titre.slice(0, 60)}"`);
+      blocked++;
+      continue;
+    }
 
     try {
       const existing = await pool.query(
@@ -71,32 +81,65 @@ async function crawlSource(source) {
       );
       const isNew = existing.rows.length === 0;
 
-      await upsertArticle({
+      const result = await upsertArticle({
         id_source:        source.id_source,
-        titre:            (item.title || '(sans titre)').slice(0, 1900),
-        description:      (item.contentSnippet || item.summary || '').slice(0, 490) || null,
-        contenu_brut:     item.contentSnippet || item.content || item.summary || null,
+        titre,
+        description:      contenu.slice(0, 490) || null,
+        contenu_brut:     contenu,
         url_origine,
         vignette:         extractVignette(item),
         date_publication: item.pubDate ? new Date(item.pubDate) : null,
-        });
+      });
 
-      isNew ? inserted++ : updated++;
+      if (isNew) {
+        inserted++;
+
+        // Invalider le cache Redis pour cette source
+        try {
+          const cache = require('../services/cache.service');
+          await cache.invalidate.articles(source.id_source);
+        } catch { /* ne pas bloquer le crawl */ }
+
+        // Classification automatique par mots-clés
+        try {
+          const { assignCategories } = require('./auto.categorie.service');
+          const categories = await assignCategories(result.id_article, titre, contenu);
+          if (categories.length > 0) {
+            console.log(`[CRAWL] "${titre.slice(0, 50)}" → ${categories.map(c => c.nom_cat).join(', ')}`);
+          }
+        } catch { /* ne pas bloquer le crawl */ }
+
+        // Notification SSE au propriétaire de la source
+        try {
+          const { notifyNouvelArticle } = require('./notification.service');
+          await notifyNouvelArticle({
+            id_article:  result.id_article,
+            titre:       result.titre,
+            url_origine: result.url_origine,
+            vignette:    result.vignette || null,
+            nom_source:  source.nom_source,
+            id_user:     source.id_user,
+          });
+        } catch { /* ne pas bloquer le crawl */ }
+
+      } else {
+        updated++;
+      }
+
     } catch (err) {
       console.error(`[CRAWL] Erreur article "${url_origine}" : ${err.message}`);
       errors++;
     }
   }
 
-  console.log(`[CRAWL] ${source.nom_source} — +${inserted} nouveaux, ${updated} mis à jour, ${errors} erreurs.`);
-  return { inserted, updated, errors };
+  console.log(`[CRAWL] ${source.nom_source} — +${inserted} nouveaux, ${updated} mis à jour, ${blocked} bloqués, ${errors} erreurs.`);
+  return { inserted, updated, blocked, errors };
 }
 
-//  Crawl de toutes les sources RSS actives
-
+// Inclut id_user pour les notifications et la classification
 async function crawlAllSources() {
   const { rows: sources } = await pool.query(
-    `SELECT id_source, nom_source, url_source, frequence_check
+    `SELECT id_source, nom_source, url_source, frequence_check, id_user
      FROM source
      WHERE type_source = 'RSS' AND url_source IS NOT NULL`
   );

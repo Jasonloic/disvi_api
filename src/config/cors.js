@@ -1,4 +1,4 @@
-const rawOrigins = process.env.CORS_ORIGINS || 'http://localhost:5173';
+const rawOrigins = process.env.CORS_ORIGINS;
 const allowedOrigins = rawOrigins.split(',').map((o) => o.trim());
 
 const corsOptions = {

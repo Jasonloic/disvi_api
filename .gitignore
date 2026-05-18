@@ -3,3 +3,4 @@
 .env.example
 package-lock.json
 *.log
+api_tests.json
