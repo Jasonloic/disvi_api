@@ -20,6 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(globalLimiter);
 app.use(cookieParser());
+app.set('trust proxy', 1);
 
 // Health
 app.get('/health', (req, res) => {
