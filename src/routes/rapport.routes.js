@@ -19,4 +19,6 @@ router.get('/', ctrl.listerRapports);
 // GET /api/rapports/:id
 router.get('/:id', ctrl.getRapport);
 
+router.get('/:id/download', ctrl.downloadRapport);
+
 module.exports = router;

@@ -12,7 +12,7 @@ function getUserId(req) {
   return req.user?.id_user ?? req.headers['x-user-id'] ?? null;
 }
 
-// Générer un rapport PDF
+// ─── Générer un rapport PDF ───────────────────────────────────────────────────
 
 async function genererRapport(req, res, next) {
   const idUser = getUserId(req);
@@ -25,13 +25,12 @@ async function genererRapport(req, res, next) {
     return fail(res, 'periode est requis : quotidienne, hebdo ou mensuelle.');
 
   try {
-    // 1. Récupérer la catégorie si fournie
+    // 1. Catégorie
     let nomCategorie = null;
     if (id_cat) {
       const { pool } = require('../config/database');
       const { rows } = await pool.query(
-        'SELECT nom_cat FROM categorie WHERE id_cat = $1',
-        [id_cat]
+        'SELECT nom_cat FROM categorie WHERE id_cat = $1', [id_cat]
       );
       if (rows.length === 0) return fail(res, 'Catégorie introuvable.', 404);
       nomCategorie = rows[0].nom_cat;
@@ -39,53 +38,46 @@ async function genererRapport(req, res, next) {
 
     // 2. Sélectionner les articles
     const { articles, dateDebut, dateFin } = await rapportService.selectionnerArticles({
-      periode,
-      id_cat:  id_cat  || null,
-      zone:    zone    || null,
-      limit:   limit   || 50,
+      periode, id_cat: id_cat || null, zone: zone || null, limit: limit || 50,
     });
 
     if (articles.length === 0)
       return fail(res, 'Aucun article trouvé pour ces critères.', 404);
 
-    // 3. Générer le PDF
+    // 3. Sauvegarder en base d'abord pour obtenir l'id_note
     const periodeLabel = { quotidienne: '24h', hebdo: '7j', mensuelle: '30j' }[periode];
     const titre = `Note de synthèse — ${nomCategorie || 'Toutes catégories'} — ${periodeLabel}`;
 
-    const pdfBuffer = await rapportService.genererPDF({
-      articles,
-      dateDebut,
-      dateFin,
-      periode,
-      categorie: nomCategorie,
-      zone,
-    });
-
-    // 4. Sauvegarder en base
     const rapport = await rapportService.sauvegarderRapport({
-      idCreateur: idUser,
-      titre,
-      periode,
-      zone:       zone || null,
-      idCat:      id_cat || null,
-      dateDebut,
-      dateFin,
-      nbArticles: articles.length,
+      idCreateur: idUser, titre, periode,
+      zone: zone || null, idCat: id_cat || null,
+      dateDebut, dateFin, nbArticles: articles.length,
     });
 
+    // 4. Générer le PDF avec l'id_note
+    const { buffer, filename } = await rapportService.genererPDF({
+      articles, dateDebut, dateFin,
+      periode, categorie: nomCategorie, zone,
+      idNote: rapport.id_note,
+    });
+
+    // 5. Stocker le nom du fichier en base
+    await rapportService.updateUrlDocument(rapport.id_note, filename);
+
+    // 6. Lier les articles au rapport
     await rapportService.lierArticlesRapport(rapport.id_note, articles);
 
-    // 5. Retourner le PDF directement
+    // 7. Retourner le PDF
     res.setHeader('Content-Type',        'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="disvi_rapport_${rapport.id_note}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('X-Rapport-Id',        rapport.id_note);
     res.setHeader('X-Nb-Articles',       String(articles.length));
-    res.send(pdfBuffer);
+    res.send(buffer);
 
   } catch (err) { next(err); }
 }
 
-// Générer et retourner les métadonnées (sans téléchargement)
+// ─── Prévisualiser avant génération ──────────────────────────────────────────
 
 async function previewRapport(req, res, next) {
   const idUser = getUserId(req);
@@ -99,10 +91,7 @@ async function previewRapport(req, res, next) {
 
   try {
     const { articles, dateDebut, dateFin } = await rapportService.selectionnerArticles({
-      periode,
-      id_cat: id_cat || null,
-      zone:   zone   || null,
-      limit:  Number(limit) || 50,
+      periode, id_cat: id_cat || null, zone: zone || null, limit: Number(limit) || 50,
     });
 
     return ok(res, {
@@ -110,22 +99,22 @@ async function previewRapport(req, res, next) {
       date_debut:  dateDebut,
       date_fin:    dateFin,
       articles:    articles.map(a => ({
-        id_article:      a.id_article,
-        titre:           a.titre,
-        nom_source:      a.nom_source,
+        id_article:       a.id_article,
+        titre:            a.titre,
+        nom_source:       a.nom_source,
         date_publication: a.date_publication,
-        zone:            a.zone,
-        categories:      a.categories,
-        score_confiance: a.score_confiance,
+        zone:             a.zone,
+        categories:       a.categories,
+        score_confiance:  a.score_confiance,
       })),
     });
   } catch (err) { next(err); }
 }
 
-// Lister les rapports de l'utilisateur
+// ─── Lister les rapports ──────────────────────────────────────────────────────
 
 async function listerRapports(req, res, next) {
-  const idUser  = getUserId(req);
+  const idUser = getUserId(req);
   if (!idUser) return fail(res, 'Utilisateur non identifié.', 401);
 
   const limit  = Math.min(Number(req.query.limit)  || 20, 100);
@@ -137,7 +126,7 @@ async function listerRapports(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// Détail d'un rapport
+// ─── Détail d'un rapport ──────────────────────────────────────────────────────
 
 async function getRapport(req, res, next) {
   const idUser = getUserId(req);
@@ -150,4 +139,33 @@ async function getRapport(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { genererRapport, previewRapport, listerRapports, getRapport };
+// ─── Télécharger un rapport PDF existant ─────────────────────────────────────
+
+async function downloadRapport(req, res, next) {
+  const idUser = getUserId(req);
+  if (!idUser) return fail(res, 'Utilisateur non identifié.', 401);
+
+  try {
+    const filepath = await rapportService.getFilePath(req.params.id, idUser);
+
+    if (!filepath)
+      return fail(res, 'Rapport introuvable.', 404);
+
+    if (!require('fs').existsSync(filepath))
+      return fail(res, 'Fichier PDF introuvable sur le serveur.', 404);
+
+    const filename = require('path').basename(filepath);
+    res.setHeader('Content-Type',        'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    require('fs').createReadStream(filepath).pipe(res);
+
+  } catch (err) { next(err); }
+}
+
+module.exports = {
+  genererRapport,
+  previewRapport,
+  listerRapports,
+  getRapport,
+  downloadRapport,
+};

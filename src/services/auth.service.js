@@ -4,7 +4,7 @@ const AuthModel = require('../models/auth.model');
 
 const JWT_SECRET         = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
-const ACCESS_EXPIRY      = process.env.JWT_ACCESS_EXPIRY  || '15m';
+const ACCESS_EXPIRY      = process.env.JWT_ACCESS_EXPIRY  || '60m';
 const REFRESH_EXPIRY     = process.env.JWT_REFRESH_EXPIRY || '7d';
 const BCRYPT_ROUNDS      = 12;
 

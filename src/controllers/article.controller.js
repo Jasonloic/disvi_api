@@ -21,7 +21,7 @@ async function listArticles(req, res, next) {
   try {
     const [articles, total] = await Promise.all([
       ArticleModel.findAllArticles({ limit, offset }),
-      ArticleModel.countAllArticles(),
+      //ArticleModel.countAllArticles(),
     ]);
     res.setHeader('X-Total-Count', String(total));
     return ok(res, { articles, total, limit, offset });
