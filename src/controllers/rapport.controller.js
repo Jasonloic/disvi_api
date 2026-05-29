@@ -12,7 +12,16 @@ function getUserId(req) {
   return req.user?.id_user ?? req.headers['x-user-id'] ?? null;
 }
 
-// ─── Générer un rapport PDF ───────────────────────────────────────────────────
+function parseIdCat(val) {
+  const n = Number(val);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function parseZone(val) {
+  // Ne filtrer par zone que si explicitement fournie et non vide
+  if (!val || val === 'all' || val === '') return null;
+  return val;
+}
 
 async function genererRapport(req, res, next) {
   const idUser = getUserId(req);
@@ -24,50 +33,49 @@ async function genererRapport(req, res, next) {
   if (!periode || !PERIODES_VALIDES.includes(periode))
     return fail(res, 'periode est requis : quotidienne, hebdo ou mensuelle.');
 
+  const idCatNum = parseIdCat(id_cat);
+  const zoneVal  = parseZone(zone);
+
   try {
-    // 1. Catégorie
     let nomCategorie = null;
-    if (id_cat) {
+    if (idCatNum) {
       const { pool } = require('../config/database');
       const { rows } = await pool.query(
-        'SELECT nom_cat FROM categorie WHERE id_cat = $1', [id_cat]
+          'SELECT nom_cat FROM categorie WHERE id_cat = $1', [idCatNum]
       );
       if (rows.length === 0) return fail(res, 'Catégorie introuvable.', 404);
       nomCategorie = rows[0].nom_cat;
     }
 
-    // 2. Sélectionner les articles
     const { articles, dateDebut, dateFin } = await rapportService.selectionnerArticles({
-      periode, id_cat: id_cat || null, zone: zone || null, limit: limit || 50,
+      periode,
+      id_cat: idCatNum,
+      zone:   zoneVal,
+      limit:  Number(limit) || 50,
+      idUser,
     });
 
     if (articles.length === 0)
       return fail(res, 'Aucun article trouvé pour ces critères.', 404);
 
-    // 3. Sauvegarder en base d'abord pour obtenir l'id_note
     const periodeLabel = { quotidienne: '24h', hebdo: '7j', mensuelle: '30j' }[periode];
     const titre = `Note de synthèse — ${nomCategorie || 'Toutes catégories'} — ${periodeLabel}`;
 
     const rapport = await rapportService.sauvegarderRapport({
       idCreateur: idUser, titre, periode,
-      zone: zone || null, idCat: id_cat || null,
+      zone: zoneVal, idCat: idCatNum,
       dateDebut, dateFin, nbArticles: articles.length,
     });
 
-    // 4. Générer le PDF avec l'id_note
     const { buffer, filename } = await rapportService.genererPDF({
       articles, dateDebut, dateFin,
-      periode, categorie: nomCategorie, zone,
+      periode, categorie: nomCategorie, zone: zoneVal,
       idNote: rapport.id_note,
     });
 
-    // 5. Stocker le nom du fichier en base
     await rapportService.updateUrlDocument(rapport.id_note, filename);
-
-    // 6. Lier les articles au rapport
     await rapportService.lierArticlesRapport(rapport.id_note, articles);
 
-    // 7. Retourner le PDF
     res.setHeader('Content-Type',        'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('X-Rapport-Id',        rapport.id_note);
@@ -76,8 +84,6 @@ async function genererRapport(req, res, next) {
 
   } catch (err) { next(err); }
 }
-
-// ─── Prévisualiser avant génération ──────────────────────────────────────────
 
 async function previewRapport(req, res, next) {
   const idUser = getUserId(req);
@@ -89,9 +95,16 @@ async function previewRapport(req, res, next) {
   if (!periode || !PERIODES_VALIDES.includes(periode))
     return fail(res, 'periode est requis : quotidienne, hebdo ou mensuelle.');
 
+  const idCatNum = parseIdCat(id_cat);
+  const zoneVal  = parseZone(zone);
+
   try {
     const { articles, dateDebut, dateFin } = await rapportService.selectionnerArticles({
-      periode, id_cat: id_cat || null, zone: zone || null, limit: Number(limit) || 50,
+      periode,
+      id_cat: idCatNum,
+      zone:   zoneVal,
+      limit:  Number(limit) || 50,
+      idUser,
     });
 
     return ok(res, {
@@ -111,8 +124,6 @@ async function previewRapport(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// ─── Lister les rapports ──────────────────────────────────────────────────────
-
 async function listerRapports(req, res, next) {
   const idUser = getUserId(req);
   if (!idUser) return fail(res, 'Utilisateur non identifié.', 401);
@@ -126,8 +137,6 @@ async function listerRapports(req, res, next) {
   } catch (err) { next(err); }
 }
 
-// ─── Détail d'un rapport ──────────────────────────────────────────────────────
-
 async function getRapport(req, res, next) {
   const idUser = getUserId(req);
   if (!idUser) return fail(res, 'Utilisateur non identifié.', 401);
@@ -138,8 +147,6 @@ async function getRapport(req, res, next) {
     return ok(res, rapport);
   } catch (err) { next(err); }
 }
-
-// ─── Télécharger un rapport PDF existant ─────────────────────────────────────
 
 async function downloadRapport(req, res, next) {
   const idUser = getUserId(req);

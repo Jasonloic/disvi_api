@@ -1,27 +1,18 @@
-const { Router } = require('express');
-const ctrl = require('../controllers/notification.controller');
+const { Router }            = require('express');
+const ctrl                  = require('../controllers/notification.controller');
+const { authMiddleware }    = require('../middlewares/auth.middleware');
+const { sseAuthMiddleware } = require('../middlewares/sse.auth.middleware');
 
 const router = Router();
 
-// Connexion SSE — le client ouvre et garde cette connexion ouverte
-// GET /api/notifications/stream
-// Header requis : x-user-id
-router.get('/stream', ctrl.connectSSE);
+// SSE — EventSource ne supporte pas les headers custom
+// Le token est passé en query param : /stream?token=...
+router.get('/stream', sseAuthMiddleware, ctrl.connectSSE);
 
-// Lister les notifications
-// GET /api/notifications?limit=20&offset=0&non_lues=true
-router.get('/', ctrl.listNotifications);
-
-// Marquer toutes comme lues
-// PATCH /api/notifications/lues
-router.patch('/lues', ctrl.marquerToutesLues);
-
-// Marquer une notification comme lue
-// PATCH /api/notifications/:id/lue
-router.patch('/:id/lue', ctrl.marquerLue);
-
-// Stats SSE (nombre de clients connectés)
-// GET /api/notifications/stats
-router.get('/stats', ctrl.sseStats);
+// Routes REST standard
+router.get('/',          authMiddleware, ctrl.listNotifications);
+router.patch('/lues',    authMiddleware, ctrl.marquerToutesLues);
+router.get('/stats',     authMiddleware, ctrl.sseStats);
+router.patch('/:id/lue', authMiddleware, ctrl.marquerLue);
 
 module.exports = router;

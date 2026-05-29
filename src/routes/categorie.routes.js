@@ -1,36 +1,33 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/categorie.controller');
+const { authMiddleware } = require('../middlewares/auth.middleware');
+const { findSourcesGroupedByCategorie } = require('../models/categorie.model');
 
 const router = Router();
 
-// CRUD catégories
-// GET    /api/categories
-router.get('/',    ctrl.listCategories);
+router.use(authMiddleware);
 
-// POST   /api/categories   { nom_cat }
-router.post('/',   ctrl.createCategorie);
+// Routes spécifiques AVANT les routes paramétriques
+router.get('/with-sources', async (req, res, next) => {
+    try {
+        const idUser = req.user?.id_user ?? null;
+        if (!idUser) return res.status(401).json({ success: false, error: 'Utilisateur non identifié.' });
+        const data = await findSourcesGroupedByCategorie(idUser);
+        return res.json({ success: true, data });
+    } catch (err) { next(err); }
+});
 
-// GET    /api/categories/:id
-router.get('/:id', ctrl.getCategorie);
+router.get('/article/:idArticle',              ctrl.getCategoriesByArticle);
+router.post('/article/:idArticle/:idCat',      ctrl.assignCategorie);
+router.delete('/article/:idArticle/:idCat',    ctrl.removeCategorie);
 
-// PATCH  /api/categories/:id   { nom_cat }
-router.patch('/:id', ctrl.updateCategorie);
-
-// DELETE /api/categories/:id
+// CRUD
+router.get('/',       ctrl.listCategories);
+router.post('/',      ctrl.createCategorie);
+router.get('/:id',    ctrl.getCategorie);
+router.patch('/:id',  ctrl.updateCategorie);
 router.delete('/:id', ctrl.deleteCategorie);
 
-// Articles d'une catégorie
-// GET /api/categories/:id/articles?limit=20&offset=0
 router.get('/:id/articles', ctrl.getArticlesByCategorie);
-
-// Catégories d'un article
-// GET    /api/categories/article/:idArticle
-router.get('/article/:idArticle', ctrl.getCategoriesByArticle);
-
-// POST   /api/categories/article/:idArticle/:idCat
-router.post('/article/:idArticle/:idCat', ctrl.assignCategorie);
-
-// DELETE /api/categories/article/:idArticle/:idCat
-router.delete('/article/:idArticle/:idCat', ctrl.removeCategorie);
 
 module.exports = router;
