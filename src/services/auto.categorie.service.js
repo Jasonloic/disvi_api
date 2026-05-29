@@ -44,7 +44,7 @@ const RULES = [
       'sante', 'hopital', 'medecin', 'maladie', 'epidemie', 'vaccin',
       'covid', 'paludisme', 'cholera', 'ebola', 'vih', 'sida', 'pharmacie',
       'medicament', 'chirurgie', 'urgence', 'deces', 'mortalite',
-      'maternite', 'enfant', 'nutrition', 'oms','manaouda malachi',
+      'maternite', 'enfant', 'nutrition', 'oms', 'manaouda malachi',
     ],
   },
   {
@@ -53,7 +53,7 @@ const RULES = [
       'education', 'ecole', 'universite', 'etudiant', 'eleve', 'enseignant',
       'professeur', 'formation', 'diplome', 'baccalaureat', 'concours',
       'bourse', 'alphabetisation', 'pedagogie', 'greve scolaire',
-      'minesup', 'minedub', 'recherche', 'scolarite','minesec',
+      'minesup', 'minedub', 'recherche', 'scolarite', 'minesec',
     ],
   },
   {
@@ -104,8 +104,8 @@ const RULES = [
 ];
 
 function scoreArticle(titre, contenu) {
-  const text   = `${titre} ${contenu}`.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // supprime les accents
+  const text = `${titre} ${contenu}`.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   const scores = [];
 
@@ -116,45 +116,45 @@ function scoreArticle(titre, contenu) {
       const regex  = new RegExp(`\\b${kwNorm}\\b`, 'g');
       const matches = text.match(regex);
       if (matches) {
-        // Titre vaut 3x plus que le contenu
-        const inTitre   = titre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(regex);
+        const inTitre = titre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(regex);
         score += matches.length + (inTitre ? inTitre.length * 2 : 0);
       }
     }
     if (score > 0) scores.push({ categorie: rule.categorie, score });
   }
 
-  // Trier par score décroissant — retourner les 3 catégories les plus pertinentes
   return scores
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
-    .filter((s) => s.score >= 2); // seuil minimum
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .filter((s) => s.score >= 2);
 }
 
 async function assignCategories(idArticle, titre, contenu) {
   try {
     const matches = scoreArticle(titre, contenu || '');
-    if (matches.length === 0) return [];
+
+    // Fallback : catégorie Général si aucune règle ne matche
+    const toAssign = matches.length > 0
+        ? matches
+        : [{ categorie: 'General', score: 0 }];
 
     const assigned = [];
 
-    for (const match of matches) {
-      // Récupérer ou créer la catégorie
+    for (const match of toAssign) {
       const { rows } = await pool.query(
-        `INSERT INTO categorie (nom_cat)
-         VALUES ($1)
-         ON CONFLICT (nom_cat) DO UPDATE SET nom_cat = EXCLUDED.nom_cat
-         RETURNING id_cat, nom_cat`,
-        [match.categorie]
+          `INSERT INTO categorie (nom_cat)
+           VALUES ($1)
+             ON CONFLICT (nom_cat) DO UPDATE SET nom_cat = EXCLUDED.nom_cat
+                                        RETURNING id_cat, nom_cat`,
+          [match.categorie]
       );
       const categorie = rows[0];
 
-      // Assigner à l'article
       await pool.query(
-        `INSERT INTO art_cat (id_article, id_cat)
-         VALUES ($1, $2)
-         ON CONFLICT DO NOTHING`,
-        [idArticle, categorie.id_cat]
+          `INSERT INTO art_cat (id_article, id_cat)
+           VALUES ($1, $2)
+             ON CONFLICT DO NOTHING`,
+          [idArticle, categorie.id_cat]
       );
 
       assigned.push({ ...categorie, score: match.score });

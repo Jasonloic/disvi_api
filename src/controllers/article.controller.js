@@ -14,15 +14,17 @@ function parsePagination(query) {
   return { limit, offset };
 }
 
-//  Tous les articles 
+function getUserId(req) {
+  return req.user?.id_user ?? req.headers['x-user-id'] ?? null;
+}
 
 async function listArticles(req, res, next) {
+  const idUser = getUserId(req);
+  if (!idUser) return fail(res, 'Utilisateur non identifié.', 401);
+
   const { limit, offset } = parsePagination(req.query);
   try {
-    const [articles, total] = await Promise.all([
-      ArticleModel.findAllArticles({ limit, offset }),
-      //ArticleModel.countAllArticles(),
-    ]);
+    const { articles, total } = await ArticleModel.findAllArticles({ limit, offset, idUser });
     res.setHeader('X-Total-Count', String(total));
     return ok(res, { articles, total, limit, offset });
   } catch (err) {
@@ -30,26 +32,23 @@ async function listArticles(req, res, next) {
   }
 }
 
-//  Articles par source 
 async function listArticlesBySource(req, res, next) {
+  const idUser   = getUserId(req);
   const idSource = parseInt(req.params.idSource, 10);
+
+  if (!idUser) return fail(res, 'Utilisateur non identifié.', 401);
   if (!Number.isFinite(idSource) || idSource < 1)
     return fail(res, 'idSource invalide.');
 
   const { limit, offset } = parsePagination(req.query);
   try {
-    const [articles, total] = await Promise.all([
-      ArticleModel.findArticlesBySource(idSource, { limit, offset }),
-      ArticleModel.countArticlesBySource(idSource),
-    ]);
+    const { articles, total } = await ArticleModel.findArticlesBySource(idSource, { limit, offset, idUser });
     res.setHeader('X-Total-Count', String(total));
     return ok(res, { articles, total, limit, offset });
   } catch (err) {
     next(err);
   }
 }
-
-//  Détail d'un article 
 
 async function getArticle(req, res, next) {
   const { id } = req.params;
@@ -61,7 +60,6 @@ async function getArticle(req, res, next) {
     next(err);
   }
 }
-// Mise a jour de la description
 
 async function patchDescription(req, res, next) {
   const { id }          = req.params;
@@ -75,8 +73,8 @@ async function patchDescription(req, res, next) {
 
   try {
     const article = await ArticleModel.updateDescription(
-      id,
-      String(description).trim()
+        id,
+        String(description).trim()
     );
     if (!article) return fail(res, 'Article introuvable.', 404);
     return ok(res, article);
