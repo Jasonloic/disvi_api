@@ -149,12 +149,12 @@ const DIRECT_RSS_MAPPING = {
       { url: "https://www.france24.com/fr/am%C3%A9riques/rss", titre: "France 24 - Amériques" },
       { url: "https://www.france24.com/fr/europe/rss", titre: "France 24 - Europe" },
       { url: "https://www.france24.com/fr/asie-pacifique/rss", titre: "France 24 - Asie" },
-      { "category": "Émission - Le Débat", "url": "https://www.france24.com/fr/%C3%A9missions/le-d%C3%A9bat/rss", titre: "France 24 - Global" },
-      { "category": "Émission - Les Observateurs", "url": "https://www.france24.com/fr/%C3%A9missions/les-observateurs/rss", "region_scope": "Global" },
-      { "category": "Émission - Intelligence Économique", "url": "https://www.france24.com/fr/%C3%A9missions/intelligence-%C3%A9conomique/rss", "region_scope": "Global" },
-      { "category": "Émission - Élément Terre", "url": "https://www.france24.com/fr/%C3%A9missions/%C3%A9l%C3%A9ment-terre/rss", "region_scope": "Global" },
-      { "category": "Émission - Reporter", "url": "https://www.france24.com/fr/%C3%A9missions/reporter/rss", "region_scope": "Global" },
-      { "category": "Émission - Une semaine dans le monde", "url": "https://www.france24.com/fr/%C3%A9missions/une-semaine-dans-le-monde/rss", "region_scope": "Global" }
+      { url: "https://www.france24.com/fr/%C3%A9missions/le-d%C3%A9bat/rss", titre: "France 24 - Émission - Le Débat" },
+      { url: "https://www.france24.com/fr/%C3%A9missions/les-observateurs/rss", titre: "France 24 - Émission - Les Observateurs" },
+      { url: "https://www.france24.com/fr/%C3%A9missions/intelligence-%C3%A9conomique/rss", titre: "France 24 - Émission - Intelligence Économique" },
+      { url: "https://www.france24.com/fr/%C3%A9missions/%C3%A9l%C3%A9ment-terre/rss", titre: "France 24 - Émission - Élément Terre" },
+      { url: "https://www.france24.com/fr/%C3%A9missions/reporter/rss", titre: "France 24 - Émission - Reporter" },
+      { url: "https://www.france24.com/fr/%C3%A9missions/une-semaine-dans-le-monde/rss", titre: "France 24 - Émission - Une semaine dans le monde" }
     ] 
   },
   "france24": { 
@@ -163,6 +163,22 @@ const DIRECT_RSS_MAPPING = {
       { url: "https://www.france24.com/fr/rss", titre: "France 24 - À la une" },
       { url: "https://www.france24.com/fr/afrique/rss", titre: "France 24 - Afrique" },
       { url: "https://www.france24.com/en/rss", titre: "France 24 - English" }
+      { url: "https://www.france24.com/fr/monde/rss", titre: "France 24 - Monde"  },
+      { url: "https://www.france24.com/fr/%C3%A9co/rss", titre: "France 24 - Économie" },
+      { url: "https://www.france24.com/fr/france/rss", titre: "France 24 - France" },
+      { url: "https://www.france24.com/fr/culture/rss", titre: "France 24 - Culture" },
+      { url: "https://www.france24.com/fr/sports/rss", titre: "France 24 - Sports" },
+      { url: "https://www.france24.com/fr/d%C3%A9couvertes/rss", titre: "France 24 - Découvertes" },
+      { url: "https://www.france24.com/fr/moyen-orient/rss", titre: "France 24 - Moyen-Orient" },
+      { url: "https://www.france24.com/fr/am%C3%A9riques/rss", titre: "France 24 - Amériques" },
+      { url: "https://www.france24.com/fr/europe/rss", titre: "France 24 - Europe" },
+      { url: "https://www.france24.com/fr/asie-pacifique/rss", titre: "France 24 - Asie" },
+      { url: "https://www.france24.com/fr/%C3%A9missions/le-d%C3%A9bat/rss", titre: "France 24 - Émission - Le Débat" },
+      { url: "https://www.france24.com/fr/%C3%A9missions/les-observateurs/rss", titre: "France 24 - Émission - Les Observateurs" },
+      { url: "https://www.france24.com/fr/%C3%A9missions/intelligence-%C3%A9conomique/rss", titre: "France 24 - Émission - Intelligence Économique" },
+      { url: "https://www.france24.com/fr/%C3%A9missions/%C3%A9l%C3%A9ment-terre/rss", titre: "France 24 - Émission - Élément Terre" },
+      { url: "https://www.france24.com/fr/%C3%A9missions/reporter/rss", titre: "France 24 - Émission - Reporter" },
+      { url: "https://www.france24.com/fr/%C3%A9missions/une-semaine-dans-le-monde/rss", titre: "France 24 - Émission - Une semaine dans le monde" }
     ] 
   },
 
