@@ -138,7 +138,7 @@ const DIRECT_RSS_MAPPING = {
     feeds: [
       { url: "https://www.france24.com/fr/rss", titre: "France 24 - À la une" },
       { url: "https://www.france24.com/fr/afrique/rss", titre: "France 24 - Afrique" },
-      { url: "https://www.france24.com/en/rss", titre: "France 24 - English" }
+      { url: "https://www.france24.com/en/rss", titre: "France 24 - English" },
       { url: "https://www.france24.com/fr/monde/rss", titre: "France 24 - Monde"  },
       { url: "https://www.france24.com/fr/%C3%A9co/rss", titre: "France 24 - Économie" },
       { url: "https://www.france24.com/fr/france/rss", titre: "France 24 - France" },
@@ -162,7 +162,7 @@ const DIRECT_RSS_MAPPING = {
     feeds: [
       { url: "https://www.france24.com/fr/rss", titre: "France 24 - À la une" },
       { url: "https://www.france24.com/fr/afrique/rss", titre: "France 24 - Afrique" },
-      { url: "https://www.france24.com/en/rss", titre: "France 24 - English" }
+      { url: "https://www.france24.com/en/rss", titre: "France 24 - English" },
       { url: "https://www.france24.com/fr/monde/rss", titre: "France 24 - Monde"  },
       { url: "https://www.france24.com/fr/%C3%A9co/rss", titre: "France 24 - Économie" },
       { url: "https://www.france24.com/fr/france/rss", titre: "France 24 - France" },
