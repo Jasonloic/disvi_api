@@ -48,7 +48,12 @@ const DIRECT_RSS_MAPPING = {
   "journal de brazza": { site_url: "https://journaldebrazza.com", feeds: [{ url: "https://journaldebrazza.com/feed/", titre: "Journal de Brazza" }] },
   "digital congo": { site_url: "https://www.digitalcongo.net", feeds: [{ url: "https://www.digitalcongo.net/rss.xml", titre: "Digital Congo" }] },
 
-  // === AFRIQUE DE L'OUEST ===
+  // === GUINÉE ÉQUATORIALE ===
+  "ahoraeg": { site_url: "https://ahoraeg.com", feeds: [{ url: "https://ahoraeg.com/feed/", titre: "AhoraEG" }] },
+  "guinea ecuatorial press": { site_url: "https://guineaecuatorialpress.com", feeds: [{ url: "https://guineaecuatorialpress.com/feed/", titre: "Guinea Ecuatorial Press" }] },
+  "guineaecuatorialpress": { site_url: "https://guineaecuatorialpress.com", feeds: [{ url: "https://guineaecuatorialpress.com/feed/", titre: "Guinea Ecuatorial Press" }] },
+
+  // === AFRIQUE DE L'OUEST & BÉNIN ===
   "jeune afrique": { site_url: "https://www.jeuneafrique.com", feeds: [{ url: "https://www.jeuneafrique.com/feed/", titre: "Jeune Afrique" }] },
   "jeuneafrique": { site_url: "https://www.jeuneafrique.com", feeds: [{ url: "https://www.jeuneafrique.com/feed/", titre: "Jeune Afrique" }] },
   "fraternite matin": { site_url: "https://www.fratmat.info", feeds: [{ url: "https://www.fratmat.info/feed", titre: "Fraternité Matin" }] },
@@ -67,7 +72,13 @@ const DIRECT_RSS_MAPPING = {
   "togofirst": { site_url: "https://www.togofirst.com", feeds: [{ url: "https://www.togofirst.com/rss.xml", titre: "Togo First" }] },
   "republic of togo": { site_url: "https://www.republicoftogo.com", feeds: [{ url: "https://www.republicoftogo.com/rss.xml", titre: "Republic of Togo" }] },
   "ici lome": { site_url: "https://icilome.com", feeds: [{ url: "https://icilome.com/feed/", titre: "Ici Lomé" }] },
-  "banouto": { site_url: "https://www.banouto.bj", feeds: [{ url: "https://www.banouto.bj/feed", titre: "Banouto" }] },
+  "banouto": { site_url: "https://www.banouto.bj", feeds: [{ url: "https://www.banouto.bj/rss", titre: "Banouto" }] },
+  "benin web tv": { site_url: "https://beninwebtv.com", feeds: [{ url: "https://beninwebtv.com/feed", titre: "Benin Web TV" }] },
+  "beninwebtv": { site_url: "https://beninwebtv.com", feeds: [{ url: "https://beninwebtv.com/feed", titre: "Benin Web TV" }] },
+  "24 heures au benin": { site_url: "https://www.24haubenin.info", feeds: [{ url: "https://www.24haubenin.info/spip.php?page=backend", titre: "24 Heures au Bénin" }] },
+  "24haubenin": { site_url: "https://www.24haubenin.info", feeds: [{ url: "https://www.24haubenin.info/spip.php?page=backend", titre: "24 Heures au Bénin" }] },
+  "leconomiste du benin": { site_url: "https://leconomistebenin.com", feeds: [{ url: "https://leconomistebenin.com/feed", titre: "L'Économiste du Bénin" }] },
+  "leconomistebenin": { site_url: "https://leconomistebenin.com", feeds: [{ url: "https://leconomistebenin.com/feed", titre: "L'Économiste du Bénin" }] },
   "la nouvelle tribune": { site_url: "https://lanouvelletribune.info", feeds: [{ url: "https://lanouvelletribune.info/feed/", titre: "La Nouvelle Tribune" }] },
   "ghanaweb": { site_url: "https://www.ghanaweb.com", feeds: [{ url: "https://www.ghanaweb.com/GhanaHomePage/rss/feed.php", titre: "GhanaWeb" }] },
   "graphic online": { site_url: "https://www.graphic.com.gh", feeds: [{ url: "https://www.graphic.com.gh/?format=feed&type=rss", titre: "Graphic Online" }] },
@@ -116,6 +127,44 @@ const DIRECT_RSS_MAPPING = {
   "midi madagasikara": { site_url: "https://midi-madagasikara.mg", feeds: [{ url: "https://midi-madagasikara.mg/feed/", titre: "Midi Madagasikara" }] },
   "le mauricien": { site_url: "https://www.lemauricien.com", feeds: [{ url: "https://www.lemauricien.com/feed/", titre: "Le Mauricien" }] },
   "lexpress maurice": { site_url: "https://lexpress.mu", feeds: [{ url: "https://lexpress.mu/rss.xml", titre: "L'Express mu" }] },
+
+  // === Panafricain & Médias Globaux Spécifiques ===
+  "rfi": { site_url: "https://www.rfi.fr", feeds: [{ url: "https://www.rfi.fr/fr/afrique/rss", titre: "RFI Afrique" }] },
+  "radio france internationale": { site_url: "https://www.rfi.fr", feeds: [{ url: "https://www.rfi.fr/fr/afrique/rss", titre: "RFI Afrique" }] },
+  "africa 24": { site_url: "https://africa24tv.com", feeds: [{ url: "https://africa24tv.com/feed/", titre: "Africa 24" }] },
+  "africa24": { site_url: "https://africa24tv.com", feeds: [{ url: "https://africa24tv.com/feed/", titre: "Africa 24" }] },
+  "france 24": { 
+    site_url: "https://www.france24.com", 
+    feeds: [
+      { url: "https://www.france24.com/fr/rss", titre: "France 24 - À la une" },
+      { url: "https://www.france24.com/fr/afrique/rss", titre: "France 24 - Afrique" },
+      { url: "https://www.france24.com/en/rss", titre: "France 24 - English" }
+      { url: "https://www.france24.com/fr/monde/rss", titre: "France 24 - Monde"  },
+      { url: "https://www.france24.com/fr/%C3%A9co/rss", titre: "France 24 - Économie" },
+      { url: "https://www.france24.com/fr/france/rss", titre: "France 24 - France" },
+      { url: "https://www.france24.com/fr/culture/rss", titre: "France 24 - Culture" },
+      { url: "https://www.france24.com/fr/sports/rss", titre: "France 24 - Sports" },
+      { url: "https://www.france24.com/fr/d%C3%A9couvertes/rss", titre: "France 24 - Découvertes" },
+      { url: "https://www.france24.com/fr/moyen-orient/rss", titre: "France 24 - Moyen-Orient" },
+      { url: "https://www.france24.com/fr/am%C3%A9riques/rss", titre: "France 24 - Amériques" },
+      { url: "https://www.france24.com/fr/europe/rss", titre: "France 24 - Europe" },
+      { url: "https://www.france24.com/fr/asie-pacifique/rss", titre: "France 24 - Asie" },
+      { "category": "Émission - Le Débat", "url": "https://www.france24.com/fr/%C3%A9missions/le-d%C3%A9bat/rss", titre: "France 24 - Global" },
+      { "category": "Émission - Les Observateurs", "url": "https://www.france24.com/fr/%C3%A9missions/les-observateurs/rss", "region_scope": "Global" },
+      { "category": "Émission - Intelligence Économique", "url": "https://www.france24.com/fr/%C3%A9missions/intelligence-%C3%A9conomique/rss", "region_scope": "Global" },
+      { "category": "Émission - Élément Terre", "url": "https://www.france24.com/fr/%C3%A9missions/%C3%A9l%C3%A9ment-terre/rss", "region_scope": "Global" },
+      { "category": "Émission - Reporter", "url": "https://www.france24.com/fr/%C3%A9missions/reporter/rss", "region_scope": "Global" },
+      { "category": "Émission - Une semaine dans le monde", "url": "https://www.france24.com/fr/%C3%A9missions/une-semaine-dans-le-monde/rss", "region_scope": "Global" }
+    ] 
+  },
+  "france24": { 
+    site_url: "https://www.france24.com", 
+    feeds: [
+      { url: "https://www.france24.com/fr/rss", titre: "France 24 - À la une" },
+      { url: "https://www.france24.com/fr/afrique/rss", titre: "France 24 - Afrique" },
+      { url: "https://www.france24.com/en/rss", titre: "France 24 - English" }
+    ] 
+  },
 
   // === AFRIQUE DU NORD ===
   "el watan": { site_url: "https://elwatan-dz.com", feeds: [{ url: "https://elwatan-dz.com/feed", titre: "El Watan" }] },
