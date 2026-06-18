@@ -29,6 +29,13 @@ function isBlockedContent(titre, contenu) {
   return BLOCKED_KEYWORDS.some((kw) => text.includes(kw.toLowerCase()));
 }
 
+// Retourne null si la date est invalide — évite "0NaN-NaN-NaN..." dans PostgreSQL
+function parseDateSafe(raw) {
+  if (!raw) return null;
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function extractVignette(item) {
   if (item.mediaContent?.$.url)   return item.mediaContent.$.url;
   if (item.mediaThumbnail?.$.url) return item.mediaThumbnail.$.url;
@@ -40,6 +47,12 @@ function extractVignette(item) {
   }
   if (item.itunes?.image) return item.itunes.image;
   return null;
+}
+
+// Nettoie les URLs avec espaces ou sauts de ligne (problème Jeune Afrique)
+function cleanUrl(raw) {
+  if (!raw) return null;
+  return raw.trim().replace(/\s+/g, '');
 }
 
 async function crawlSource(source) {
@@ -62,7 +75,7 @@ async function crawlSource(source) {
   let inserted = 0, updated = 0, errors = 0, blocked = 0;
 
   for (const item of items) {
-    const url_origine = item.link || item.guid;
+    const url_origine = cleanUrl(item.link || item.guid);
     if (!url_origine) { errors++; continue; }
 
     const titre   = (item.title || '(sans titre)').slice(0, 1900);
@@ -88,19 +101,17 @@ async function crawlSource(source) {
         contenu_brut:     contenu,
         url_origine,
         vignette:         extractVignette(item),
-        date_publication: item.pubDate ? new Date(item.pubDate) : null,
+        date_publication: parseDateSafe(item.pubDate),
       });
 
       if (isNew) {
         inserted++;
 
-        // Invalider le cache Redis pour cette source
         try {
           const cache = require('../services/cache.service');
           await cache.invalidate.articles(source.id_source);
         } catch { /* ne pas bloquer le crawl */ }
 
-        // Classification automatique par mots-clés
         try {
           const { assignCategories } = require('./auto.categorie.service');
           const categories = await assignCategories(result.id_article, titre, contenu);
@@ -109,7 +120,6 @@ async function crawlSource(source) {
           }
         } catch { /* ne pas bloquer le crawl */ }
 
-        // Notification SSE au propriétaire de la source
         try {
           const { notifyNouvelArticle } = require('./notification.service');
           await notifyNouvelArticle({
@@ -136,7 +146,6 @@ async function crawlSource(source) {
   return { inserted, updated, blocked, errors };
 }
 
-// Inclut id_user pour les notifications et la classification
 async function crawlAllSources() {
   const { rows: sources } = await pool.query(
     `SELECT id_source, nom_source, url_source, frequence_check, id_user
