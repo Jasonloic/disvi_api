@@ -2,35 +2,31 @@ const redis = require('../config/redis');
 
 const PREFIX = 'disvi:';
 
-// TTL par domaine (secondes)
 const TTL = {
-  ARTICLES_LIST:     2   * 60,  // 2 min
-  ARTICLE_DETAIL:    10  * 60,  // 10 min
-  ARTICLES_SOURCE:   2   * 60,  // 2 min
-  ARTICLES_CATEGORIE:5   * 60,  // 5 min
-  SEARCH_INTERNE:    3   * 60,  // 3 min
-  SOURCES_USER:      5   * 60,  // 5 min
-  SOURCE_DETAIL:     5   * 60,  // 5 min
-  CATEGORIES:        60  * 60,  // 1 heure
-  CATEGORIE_DETAIL:  60  * 60,  // 1 heure
+  ARTICLES_LIST:     2   * 60,
+  ARTICLE_DETAIL:    10  * 60,
+  ARTICLES_SOURCE:   2   * 60,
+  ARTICLES_CATEGORIE:5   * 60,
+  SEARCH_INTERNE:    3   * 60,
+  SOURCES_USER:      5   * 60,
+  SOURCE_DETAIL:     5   * 60,
+  CATEGORIES:        60  * 60,
+  CATEGORIE_DETAIL:  60  * 60,
 };
-
-// Clés normalisées
 
 const keys = {
-  articlesList:      (limit, offset)         => `${PREFIX}articles:list:${limit}:${offset}`,
-  articleDetail:     (id)                    => `${PREFIX}articles:detail:${id}`,
-  articlesSource:    (sourceId, limit, offset)=> `${PREFIX}articles:source:${sourceId}:${limit}:${offset}`,
-  articlesCategorie: (catId, limit, offset)  => `${PREFIX}articles:cat:${catId}:${limit}:${offset}`,
+  // idUser inclus pour isoler le cache par utilisateur
+  articlesList:      (limit, offset, idUser)          => `${PREFIX}articles:list:${idUser}:${limit}:${offset}`,
+  articleDetail:     (id)                             => `${PREFIX}articles:detail:${id}`,
+  articlesSource:    (sourceId, limit, offset, idUser) => `${PREFIX}articles:source:${idUser}:${sourceId}:${limit}:${offset}`,
+  articlesCategorie: (catId, limit, offset)           => `${PREFIX}articles:cat:${catId}:${limit}:${offset}`,
   searchInterne:     (q, zone, sourceId, limit, offset) =>
     `${PREFIX}search:${q}:${zone||'all'}:${sourceId||'all'}:${limit}:${offset}`,
-  sourcesUser:       (userId)                => `${PREFIX}sources:user:${userId}`,
-  sourceDetail:      (id, userId)            => `${PREFIX}sources:detail:${id}:${userId}`,
-  categories:        ()                      => `${PREFIX}categories:all`,
-  categorieDetail:   (id)                    => `${PREFIX}categories:detail:${id}`,
+  sourcesUser:       (userId)                         => `${PREFIX}sources:user:${userId}`,
+  sourceDetail:      (id, userId)                     => `${PREFIX}sources:detail:${id}:${userId}`,
+  categories:        ()                               => `${PREFIX}categories:all`,
+  categorieDetail:   (id)                             => `${PREFIX}categories:detail:${id}`,
 };
-
-// Opérations de base
 
 async function get(key) {
   try {
@@ -58,7 +54,6 @@ async function del(...cacheKeys) {
   }
 }
 
-// Supprime toutes les clés correspondant à un pattern
 async function delPattern(pattern) {
   try {
     const fullPattern = pattern.startsWith(PREFIX) ? pattern : `${PREFIX}${pattern}`;
@@ -72,9 +67,6 @@ async function delPattern(pattern) {
   }
 }
 
-// Cache-aside helper 
-// Évite le boilerplate : get → si absent → fetch → set
-
 async function getOrSet(key, ttl, fetchFn) {
   const cached = await get(key);
   if (cached !== null) {
@@ -85,29 +77,25 @@ async function getOrSet(key, ttl, fetchFn) {
   return { data, fromCache: false };
 }
 
-// Invalidations groupées 
-
 const invalidate = {
-  // Appelé après crawl d'une source → invalider listes d'articles
+  // Invalide les listes de tous les utilisateurs après un crawl
   articles: async (sourceId) => {
     await Promise.all([
       delPattern('articles:list:*'),
-      delPattern(`articles:source:${sourceId}:*`),
+      delPattern(`articles:source:*:${sourceId}:*`),
       delPattern('articles:cat:*'),
       delPattern('search:*'),
     ]);
   },
 
-  // Appelé après modif/suppression d'une source
   source: async (sourceId, userId) => {
     await Promise.all([
       del(keys.sourceDetail(sourceId, userId)),
       del(keys.sourcesUser(userId)),
-      delPattern(`articles:source:${sourceId}:*`),
+      delPattern(`articles:source:${userId}:${sourceId}:*`),
     ]);
   },
 
-  // Appelé après modif d'une catégorie
   categories: async (catId) => {
     await Promise.all([
       del(keys.categories()),
@@ -116,7 +104,6 @@ const invalidate = {
     ]);
   },
 
-  // Appelé après modif d'un article (description, note, sauvegarde)
   article: async (articleId) => {
     await Promise.all([
       del(keys.articleDetail(articleId)),
